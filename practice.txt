@@ -1,0 +1,48 @@
+--- VIM FOUNDATIONS PRACTICE ---
+
+1. Delete the word "ORANGE" in this sentence: The ORANGE apple is red.
+   (Hint: Place cursor at the start of ORANGE)
+
+2. Change the word "INCORRECT" to "CLEAN": This code is INCORRECT right now.
+   (Hint: 'c' deletes and enters Insert Mode)
+
+3. Delete from the cursor to the end of this line: Keep this part. DELETE ALL OF THIS.
+   (Hint: Move cursor to 'D' in DELETE)
+
+4. Navigation Check:
+   - Use 'w' to jump forward words.
+   - Use 'b' to jump back words.
+   - Use '0' to snap to the start.
+   - Use '$' to snap to the end.
+
+[ ACTION ZONE ]
+Move the cursor here and try combining keys.
+Adding a new line with comas like this: , just to follow the tutorial. Let me add another
+5. Text Objects (Inside):
+   - Place your cursor anywhere in the middle of "FLAMINGO".
+   - Type 'ciw' and change it to "BIRD".
+
+6. Precision Deletion:
+   - This sentence has (TOO MUCH DATA) in parentheses.
+   - Place cursor inside the parentheses and type 'di('.
+
+7. The Search Jump:
+   - Type '/Navigation' and hit Enter to jump to the Navigation section above.
+   - (Press 'n' to go to the next match, 'N' for previous).
+8. Inside vs Around (Words):
+   - Sentence: "The quick brown fox."
+   - Place cursor on "quick". Try 'diw'. Notice the spaces?
+   - Undo with 'u', then try 'daw'. See the difference?
+
+9. Inside vs Around (Blocks):
+   - Data: "print( )"
+   - Cursor on 'H': Try 'di'' to clear the greeting.
+   - Undo with 'u', then try 'da'' to remove the quotes too.
+
+10. The Multi-Line Jump:
+    - Use 'G' (capital) to jump to the very bottom of the file.
+    - Use 'gg' to jump back to the very top.
+
+Testing spaces   'spaces'   '   spaces'   'spaces'
+
+(one) (two) three (four)

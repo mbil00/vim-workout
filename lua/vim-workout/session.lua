@@ -4,7 +4,7 @@
 local M = {}
 
 local ui = require("vim-workout.ui")
-local exercise = require("vim-workout.exercise")
+local exercise = require("vim-workout.exercises")
 local verifier = require("vim-workout.verifier")
 local progress = require("vim-workout.progress")
 

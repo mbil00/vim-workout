@@ -3,14 +3,11 @@
 
 local M = {}
 
+local settings = require("vim-workout.settings")
+
 -- Default data directory
 local data_dir = vim.fn.stdpath("data") .. "/vim-workout"
 local progress_file = data_dir .. "/progress.json"
-
--- Unlock threshold (80% success rate)
-local UNLOCK_THRESHOLD = 0.80
--- Minimum attempts before a skill can unlock the next tier
-local MIN_ATTEMPTS_FOR_UNLOCK = 5
 
 --- Load progress from disk
 ---@return table progress
@@ -142,6 +139,10 @@ function M.check_unlocks(prog, completed_skill_id)
   local skills_module = require("vim-workout.skills")
   local all_skills = skills_module.get_all()
 
+  -- Get threshold settings
+  local unlock_threshold = settings.get("unlock_threshold") or 0.80
+  local min_attempts = settings.get("min_attempts_for_unlock") or 5
+
   for _, skill in ipairs(all_skills) do
     -- Skip already unlocked skills
     local skill_prog = prog.skills[skill.id]
@@ -159,13 +160,13 @@ function M.check_unlocks(prog, completed_skill_id)
       end
 
       -- Check minimum attempts and mastery threshold
-      if prereq_prog.attempts < MIN_ATTEMPTS_FOR_UNLOCK then
+      if prereq_prog.attempts < min_attempts then
         prereqs_met = false
         break
       end
 
       local mastery = prereq_prog.successes / prereq_prog.attempts
-      if mastery < UNLOCK_THRESHOLD then
+      if mastery < unlock_threshold then
         prereqs_met = false
         break
       end

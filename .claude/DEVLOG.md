@@ -643,3 +643,106 @@ All Tier 4-5 skills now have dedicated generators instead of falling back to the
 
 ---
 
+## Session 7: Settings Screen & Equivalent Keystrokes (2026-01-16)
+
+### What Was Added
+
+#### Part 1: Accept Equivalent/Better Keystrokes
+
+**Problem**: Using `D` instead of `d$` was marked as suboptimal, even though it's more efficient.
+
+**Solution** (verifier.lua):
+- Added `KEYSTROKE_ALIASES` mapping shortcuts to expanded forms:
+  - `D` → `d$`
+  - `C` → `c$`
+  - `x` → `dl`
+  - `X` → `dh`
+  - `s` → `cl`
+  - `S` → `cc`
+  - `Y` → `yy`
+
+- Updated `compare_keystrokes()` to accept:
+  1. Exact matches
+  2. Fewer keystrokes (user found a better solution)
+  3. User keys that expand to match optimal (via aliases)
+  4. Optimal keys that expand to match user keys (user used shortcut)
+  5. Both expand to the same sequence
+
+#### Part 2: Settings System
+
+**New File**: `lua/vim-workout/settings.lua`
+- Settings persisted to `~/.local/share/nvim/vim-workout/settings.json`
+- Caching for performance
+- Load/save/get/set/reset functions
+
+**Configurable Settings**:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `completion_delay_ms` | 2000 | Delay before showing feedback (500-5000ms) |
+| `unlock_threshold` | 0.80 | Success rate to unlock next tier (50-100%) |
+| `min_attempts_for_unlock` | 5 | Minimum attempts before unlock (1-20) |
+| `show_tips` | true | Show educational tips |
+| `accept_better_solutions` | true | Accept shorter/equivalent keystrokes as optimal |
+
+#### Part 3: Interactive Settings UI
+
+**New Command**: `:VimWorkoutSettings`
+
+Opens an interactive floating window:
+```
+┌─ vim-workout Settings ──────────────────────┐
+│                                             │
+│  > Completion delay:      2.0 seconds       │
+│    Unlock threshold:      80%               │
+│    Min attempts to unlock: 5                │
+│    Show tips:             [x]               │
+│    Accept better solutions: [x]             │
+│                                             │
+│  j/k: Navigate   +/-/h/l: Adjust   Space: Toggle│
+│  r: Reset defaults   q/Esc: Save & close    │
+└─────────────────────────────────────────────┘
+```
+
+**Keybindings**:
+- `j`/`k` - Navigate between settings
+- `+`/`-`/`h`/`l` - Adjust numeric values
+- `Space`/`Enter` - Toggle boolean values
+- `r` - Reset all to defaults
+- `q`/`Esc` - Save and close
+
+### Files Created/Modified
+
+| File | Action | Changes |
+|------|--------|---------|
+| `lua/vim-workout/settings.lua` | Created | Settings load/save/defaults/cache |
+| `lua/vim-workout/verifier.lua` | Modified | Keystroke aliases + equivalence logic |
+| `lua/vim-workout/session.lua` | Modified | Uses `completion_delay_ms` setting |
+| `lua/vim-workout/progress.lua` | Modified | Uses `unlock_threshold` and `min_attempts_for_unlock` |
+| `lua/vim-workout/ui.lua` | Modified | Added `show_settings()` interactive editor |
+| `lua/vim-workout/init.lua` | Modified | Added `show_settings()` function |
+| `plugin/vim-workout.lua` | Modified | Registered `:VimWorkoutSettings` command |
+
+### Implementation Notes
+
+#### Settings Module Design
+- Uses caching to avoid repeated file reads
+- `clear_cache()` available for testing
+- Merges user settings with defaults to handle new settings in updates
+
+#### Keystroke Equivalence Logic
+- Result is already verified correct before checking keystrokes
+- If result is correct AND keystrokes are fewer → user found better solution
+- Alias expansion works bidirectionally (D↔d$ both ways)
+
+### Commands Available
+- `:VimWorkout` - Start practice session
+- `:VimWorkoutSkills` - View skill tree and progress
+- `:VimWorkoutStats` - View statistics
+- `:VimWorkoutReset` - Reset all progress
+- `:VimWorkoutFocus {skill_id}` - Practice specific skill
+- `:VimWorkoutSettings` - Open settings editor (NEW)
+- `:VimWorkoutReload` - Reload plugin (development)
+
+---
+

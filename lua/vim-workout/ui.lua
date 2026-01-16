@@ -313,4 +313,191 @@ function M.confirm(message, callback)
   end, { buffer = buf, nowait = true })
 end
 
+--- Show interactive settings editor
+function M.show_settings()
+  local settings = require("vim-workout.settings")
+  local defs = settings.SETTING_DEFS
+  local current_settings = settings.load()
+  local original_settings = vim.deepcopy(current_settings)
+  local selected = 1
+
+  -- State for tracking changes
+  local has_changes = false
+
+  -- Helper to render a boolean value
+  local function render_bool(val)
+    return val and "[x]" or "[ ]"
+  end
+
+  -- Helper to render a setting value
+  local function render_value(def, val)
+    if def.type == "boolean" then
+      return render_bool(val)
+    elseif def.format then
+      return def.format(val)
+    else
+      return tostring(val)
+    end
+  end
+
+  -- Build content lines
+  local function build_content()
+    local content = { "" }
+
+    for i, def in ipairs(defs) do
+      local val = current_settings[def.id]
+      local display = render_value(def, val)
+      local prefix = i == selected and "  > " or "    "
+      local line = prefix .. def.label .. ": "
+
+      -- Pad label to align values
+      local pad_len = 25 - #def.label
+      line = line .. string.rep(" ", pad_len) .. display
+
+      -- Mark changed values
+      if current_settings[def.id] ~= original_settings[def.id] then
+        line = line .. " *"
+        has_changes = true
+      end
+
+      table.insert(content, line)
+    end
+
+    table.insert(content, "")
+    table.insert(content, "  j/k: Navigate   +/-/h/l: Adjust   Space: Toggle")
+    table.insert(content, "  r: Reset defaults   q/Esc: Save & close")
+    table.insert(content, "")
+
+    return content
+  end
+
+  -- Create the initial window
+  local content = build_content()
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, content)
+  vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+
+  local width = 55
+  local height = #content + 2
+  local screen_width = vim.o.columns
+  local screen_height = vim.o.lines
+  local row = math.floor((screen_height - height) / 2)
+  local col = math.floor((screen_width - width) / 2)
+
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = "editor",
+    width = width,
+    height = height,
+    row = row,
+    col = col,
+    style = "minimal",
+    border = "rounded",
+    title = " vim-workout Settings ",
+    title_pos = "center",
+  })
+
+  vim.api.nvim_win_set_option(win, "cursorline", false)
+
+  -- Refresh the display
+  local function refresh()
+    vim.api.nvim_buf_set_option(buf, "modifiable", true)
+    local new_content = build_content()
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, new_content)
+    vim.api.nvim_buf_set_option(buf, "modifiable", false)
+  end
+
+  -- Close and save
+  local function close_and_save()
+    settings.save(current_settings)
+    vim.api.nvim_win_close(win, true)
+    if has_changes then
+      vim.notify("vim-workout: Settings saved!", vim.log.levels.INFO)
+    end
+  end
+
+  -- Adjust a numeric setting
+  local function adjust(delta)
+    local def = defs[selected]
+    if def.type ~= "number" then
+      return
+    end
+
+    local val = current_settings[def.id]
+    local step = def.step or 1
+    val = val + (step * delta)
+
+    -- Clamp to min/max
+    if def.min and val < def.min then
+      val = def.min
+    end
+    if def.max and val > def.max then
+      val = def.max
+    end
+
+    current_settings[def.id] = val
+    refresh()
+  end
+
+  -- Toggle a boolean setting
+  local function toggle()
+    local def = defs[selected]
+    if def.type ~= "boolean" then
+      return
+    end
+
+    current_settings[def.id] = not current_settings[def.id]
+    refresh()
+  end
+
+  -- Navigation
+  vim.keymap.set("n", "j", function()
+    selected = math.min(selected + 1, #defs)
+    refresh()
+  end, { buffer = buf, nowait = true })
+
+  vim.keymap.set("n", "k", function()
+    selected = math.max(selected - 1, 1)
+    refresh()
+  end, { buffer = buf, nowait = true })
+
+  -- Adjustments
+  vim.keymap.set("n", "+", function()
+    adjust(1)
+  end, { buffer = buf, nowait = true })
+
+  vim.keymap.set("n", "-", function()
+    adjust(-1)
+  end, { buffer = buf, nowait = true })
+
+  vim.keymap.set("n", "l", function()
+    adjust(1)
+  end, { buffer = buf, nowait = true })
+
+  vim.keymap.set("n", "h", function()
+    adjust(-1)
+  end, { buffer = buf, nowait = true })
+
+  -- Toggle
+  vim.keymap.set("n", "<Space>", function()
+    toggle()
+  end, { buffer = buf, nowait = true })
+
+  vim.keymap.set("n", "<CR>", function()
+    toggle()
+  end, { buffer = buf, nowait = true })
+
+  -- Reset to defaults
+  vim.keymap.set("n", "r", function()
+    current_settings = settings.get_defaults()
+    refresh()
+  end, { buffer = buf, nowait = true })
+
+  -- Close
+  vim.keymap.set("n", "q", close_and_save, { buffer = buf, nowait = true })
+  vim.keymap.set("n", "<Esc>", close_and_save, { buffer = buf, nowait = true })
+
+  -- Set buffer as non-modifiable initially
+  vim.api.nvim_buf_set_option(buf, "modifiable", false)
+end
+
 return M

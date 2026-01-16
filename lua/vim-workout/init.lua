@@ -61,4 +61,9 @@ function M.focus_skill(skill_id)
   session.start_focused(skill, prog)
 end
 
+--- Show settings editor
+function M.show_settings()
+  ui.show_settings()
+end
+
 return M

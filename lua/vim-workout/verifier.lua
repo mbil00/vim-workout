@@ -3,6 +3,20 @@
 
 local M = {}
 
+local settings = require("vim-workout.settings")
+
+-- Keystroke aliases: shortcut → expanded form
+-- These shortcuts are equivalent (or better) than their expanded forms
+local KEYSTROKE_ALIASES = {
+  ["D"] = { "d", "$" },
+  ["C"] = { "c", "$" },
+  ["x"] = { "d", "l" },
+  ["X"] = { "d", "h" },
+  ["s"] = { "c", "l" },
+  ["S"] = { "c", "c" },
+  ["Y"] = { "y", "y" },  -- Y is often mapped to y$, but default is yy
+}
+
 --- Check if an exercise is completed
 ---@param exercise table Exercise definition
 ---@param actual table Current state { lines, cursor }
@@ -51,9 +65,13 @@ function M.check_cursor_position(exercise, actual, captured_keys)
   local optimal_keys = exercise.optimal_keys or {}
   local is_optimal = M.compare_keystrokes(captured_keys, optimal_keys)
 
-  -- Generate educational tip if not optimal
+  -- Generate educational tip if not optimal (respecting settings)
   local tip = nil
-  if not is_optimal and #optimal_keys > 0 then
+  local show_tips = settings.get("show_tips")
+  if show_tips == nil then
+    show_tips = true -- Default to true
+  end
+  if not is_optimal and #optimal_keys > 0 and show_tips then
     tip = M.generate_tip(captured_keys, optimal_keys, exercise)
   end
 
@@ -99,8 +117,13 @@ function M.check_buffer_content(exercise, actual, captured_keys)
   local optimal_keys = exercise.optimal_keys or {}
   local is_optimal = M.compare_keystrokes(captured_keys, optimal_keys)
 
+  -- Generate educational tip if not optimal (respecting settings)
   local tip = nil
-  if not is_optimal and #optimal_keys > 0 then
+  local show_tips = settings.get("show_tips")
+  if show_tips == nil then
+    show_tips = true -- Default to true
+  end
+  if not is_optimal and #optimal_keys > 0 and show_tips then
     tip = M.generate_tip(captured_keys, optimal_keys, exercise)
   end
 
@@ -112,22 +135,93 @@ function M.check_buffer_content(exercise, actual, captured_keys)
   }
 end
 
+--- Expand a keystroke sequence using aliases
+--- E.g., { "D" } → { "d", "$" }
+---@param keys table Keystroke sequence
+---@return table expanded Expanded sequence
+local function expand_keystrokes(keys)
+  local result = {}
+  for _, key in ipairs(keys) do
+    local expansion = KEYSTROKE_ALIASES[key]
+    if expansion then
+      for _, expanded_key in ipairs(expansion) do
+        table.insert(result, expanded_key)
+      end
+    else
+      table.insert(result, key)
+    end
+  end
+  return result
+end
+
+--- Check if two keystroke sequences are equal
+---@param a table First sequence
+---@param b table Second sequence
+---@return boolean
+local function sequences_equal(a, b)
+  if #a ~= #b then
+    return false
+  end
+  for i, key in ipairs(a) do
+    if key ~= b[i] then
+      return false
+    end
+  end
+  return true
+end
+
 --- Compare user keystrokes with optimal solution
+--- Returns true if:
+--- 1. Exact match
+--- 2. User used fewer keys (and result was verified correct by caller)
+--- 3. User keys expand to match optimal (via aliases)
+--- 4. Optimal keys expand to match user keys (user used shortcut)
 ---@param user_keys table User's keystrokes
 ---@param optimal_keys table Optimal keystrokes
 ---@return boolean is_optimal
 function M.compare_keystrokes(user_keys, optimal_keys)
-  if #user_keys ~= #optimal_keys then
+  -- Check setting first
+  local accept_better = settings.get("accept_better_solutions")
+  if accept_better == nil then
+    accept_better = true -- Default to true
+  end
+
+  -- Case 1: Exact match
+  if sequences_equal(user_keys, optimal_keys) then
+    return true
+  end
+
+  -- If not accepting better solutions, only exact match counts
+  if not accept_better then
     return false
   end
 
-  for i, key in ipairs(user_keys) do
-    if key ~= optimal_keys[i] then
-      return false
-    end
+  -- Case 2: User used fewer keys (exercise result is already verified correct)
+  -- This means they found a more efficient solution
+  if #user_keys < #optimal_keys then
+    return true
   end
 
-  return true
+  -- Case 3: Check if user keys expand to match optimal
+  -- e.g., user typed "d$" when optimal was "D" - not optimal but equivalent
+  local user_expanded = expand_keystrokes(user_keys)
+  if sequences_equal(user_expanded, optimal_keys) then
+    return true
+  end
+
+  -- Case 4: Check if optimal keys expand to match user keys
+  -- e.g., user typed "D" when optimal was "d$" - this is better!
+  local optimal_expanded = expand_keystrokes(optimal_keys)
+  if sequences_equal(user_keys, optimal_expanded) then
+    return true
+  end
+
+  -- Case 5: Both expand to the same sequence
+  if sequences_equal(user_expanded, optimal_expanded) then
+    return true
+  end
+
+  return false
 end
 
 --- Generate an educational tip based on the difference

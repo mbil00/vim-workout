@@ -30,6 +30,10 @@ vim.api.nvim_create_user_command("VimWorkoutFocus", function(opts)
   _G.vim_workout.focus_skill(opts.args)
 end, { nargs = 1, desc = "Practice a specific skill" })
 
+vim.api.nvim_create_user_command("VimWorkoutSettings", function()
+  _G.vim_workout.show_settings()
+end, { desc = "Open vim-workout settings editor" })
+
 -- Development: reload all modules
 vim.api.nvim_create_user_command("VimWorkoutReload", function()
   -- Clear cached modules

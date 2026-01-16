@@ -7,6 +7,7 @@ local ui = require("vim-workout.ui")
 local exercise = require("vim-workout.exercises")
 local verifier = require("vim-workout.verifier")
 local progress = require("vim-workout.progress")
+local settings = require("vim-workout.settings")
 
 -- Session state
 local state = {
@@ -339,7 +340,8 @@ function M.complete_exercise(result)
   -- Show completion indicator so user can see their change
   state.indicator_win = ui.show_completion_indicator()
 
-  -- Wait 2 seconds before showing feedback, so user can see the result of their action
+  -- Wait before showing feedback, so user can see the result of their action
+  local delay_ms = settings.get("completion_delay_ms") or 2000
   vim.defer_fn(function()
     -- Session may have been ended during the delay
     if not state.active then
@@ -368,7 +370,7 @@ function M.complete_exercise(result)
 
     -- Show feedback and track window
     state.feedback_win = ui.show_feedback(result, M.next_exercise, M.end_session)
-  end, 2000)  -- 2 second delay
+  end, delay_ms)
 end
 
 --- Abort the current exercise

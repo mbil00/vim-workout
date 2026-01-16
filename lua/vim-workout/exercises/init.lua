@@ -98,6 +98,19 @@ function M.generate_for_skill(skill)
     motion_0 = gens.motions.gen_line_start,
     motion_caret = gens.motions.gen_first_nonblank,
     motion_dollar = gens.motions.gen_line_end,
+    -- Tier 4: Character search
+    motion_f = gens.motions.gen_find_char,
+    motion_t = gens.motions.gen_till_char,
+    motion_F = gens.motions.gen_find_char_backward,
+    motion_T = gens.motions.gen_till_char_backward,
+    motion_semicolon = gens.motions.gen_repeat_find,
+    motion_comma = gens.motions.gen_repeat_find_reverse,
+    -- Tier 5: File navigation
+    motion_gg = gens.motions.gen_goto_top,
+    motion_G = gens.motions.gen_goto_bottom,
+    motion_percent = gens.motions.gen_match_bracket,
+    motion_brace_open = gens.motions.gen_paragraph_up,
+    motion_brace_close = gens.motions.gen_paragraph_down,
     -- Tier 6: Operators
     operator_d = gens.operators.gen_delete_motion,
     operator_c = gens.operators.gen_change_motion,

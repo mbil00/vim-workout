@@ -3,13 +3,13 @@
 ## Project Overview
 A Neovim plugin to learn vim through interactive, progressively unlocking exercises with educational feedback. Skills are randomly mixed into exercises once unlocked, creating natural spaced repetition.
 
-## Current Status: Phase 4 Complete (Text Objects Added)
+## Current Status: Phase 5 Complete (All Core Features)
 
 ### What's Implemented
 - Plugin structure with Lua modules
 - Floating window UI for prompts and feedback
 - Session management with keystroke capture
-- Exercise generation for Tier 1-3 motions
+- Exercise generation for all Tier 1-7 skills with dedicated generators
 - Progress persistence to `~/.local/share/nvim/vim-workout/`
 - Skill unlock system (80% success rate + 5 minimum attempts)
 - Optimal keystroke comparison with educational tips
@@ -19,7 +19,8 @@ A Neovim plugin to learn vim through interactive, progressively unlocking exerci
 - **Tier 1**: h/j/k/l (basic movement)
 - **Tier 2**: w, b, e, W, B, E (word motions)
 - **Tier 3**: 0, ^, $ (line motions)
-- **Tier 4-5**: Defined but using fallback generator (f, t, F, T, gg, G, %, {, })
+- **Tier 4**: f, t, F, T, ;, , (character search motions)
+- **Tier 5**: gg, G, %, {, } (file navigation motions)
 - **Tier 6**: d, c, y, dd, cc, yy, D, C (operators)
 - **Tier 7**: iw, aw, i", a", i', a', i), a), i], a], i}, a}, i>, a>, ip, ap, it, at (text objects)
 
@@ -516,9 +517,129 @@ state = {
 
 ---
 
-### Next Steps (Phase 5+)
-- [ ] Implement Tier 4-5 motion generators (f, t, gg, G, %, {, })
+### Next Steps (Phase 6)
 - [ ] Visual mode exercises
 - [ ] Registers & macros
 - [ ] Session configuration options
+
+---
+
+## Session 6: Tier 4-5 Motion Generators (2026-01-16)
+
+### What Was Added
+
+Implemented proper exercise generators for all Tier 4 and Tier 5 motion skills, replacing the fallback generators that previously substituted `j` motions.
+
+#### Tier 4: Character Search Motions (6 skills)
+
+**`motion_f` - Find character forward:**
+- Generates line with random words
+- Picks a target character from a word in the middle of the line
+- User presses `f{char}` to jump to that character
+- Optimal: `{ "f", target_char }`
+
+**`motion_t` - Till character forward:**
+- Similar to `f` but cursor stops one position BEFORE the target
+- User presses `t{char}` to jump to just before that character
+- Optimal: `{ "t", target_char }`
+
+**`motion_F` - Find character backward:**
+- Starts cursor at end of line
+- User presses `F{char}` to jump backward to character
+- Optimal: `{ "F", target_char }`
+
+**`motion_T` - Till character backward:**
+- Starts cursor at end of line
+- Cursor stops one position AFTER the target (moving backward)
+- Optimal: `{ "T", target_char }`
+
+**`motion_semicolon` - Repeat find (;):**
+- Creates line with repeated distinctive characters (x, z, q, k)
+- User must use `f{char}` then `;` to reach the second occurrence
+- Teaches the combo pattern: `f` followed by `;` to repeat
+- Optimal: `{ "f", char, ";" }`
+
+**`motion_comma` - Repeat find reverse (,):**
+- Starts cursor at end of line
+- User must use `F{char}` then `,` to find the next occurrence in reverse
+- Teaches the reverse repeat pattern
+- Optimal: `{ "F", char, "," }`
+
+#### Tier 5: File Navigation Motions (5 skills)
+
+**`motion_gg` - Go to top:**
+- Generates 10-line buffer
+- Starts cursor on line 5-9
+- User presses `gg` to jump to first line
+- Optimal: `{ "g", "g" }`
+
+**`motion_G` - Go to bottom:**
+- Generates 10-line buffer
+- Starts cursor on line 1
+- User presses `G` to jump to last line
+- Optimal: `{ "G" }`
+
+**`motion_percent` - Matching bracket (%):**
+- Uses predefined code templates with brackets: `()`, `[]`, `{}`
+- Cursor starts on opening bracket
+- User presses `%` to jump to matching closing bracket
+- Templates include: if conditions, array access, function bodies, nested expressions
+- Optimal: `{ "%" }`
+
+**`motion_brace_open` - Paragraph up ({):**
+- Generates 3-paragraph buffer with blank line separators
+- Starts in third paragraph
+- User presses `{` to jump to previous blank line
+- Optimal: `{ "{" }`
+
+**`motion_brace_close` - Paragraph down (}):**
+- Generates 3-paragraph buffer with blank line separators
+- Starts in first paragraph
+- User presses `}` to jump to next blank line
+- Optimal: `{ "}" }`
+
+### Implementation Notes
+
+#### Character Selection for f/t/F/T
+- Characters are selected from actual words in the line (not injected)
+- Position calculations account for word lengths and spaces
+- For `t` and `T`, special care to ensure there's a valid position before/after the target
+
+#### Repeat Find (; and ,) Design
+- These skills require teaching the combo pattern (f then ;, F then ,)
+- Uses distinctive characters (x, z, q, k) to avoid accidental matches
+- Instruction explicitly tells user to use the combo
+
+#### Bracket Matching Templates
+- Pre-calculated positions to ensure accuracy
+- Each template tests cursor start and expected end positions
+- Covers common code patterns: conditionals, arrays, objects
+
+### Files Modified
+- `lua/vim-workout/exercises/motions.lua` - Added 11 new generator functions (325+ lines)
+- `lua/vim-workout/exercises/init.lua` - Added 11 routing entries for Tier 4-5 skills
+
+### Generator Functions Added
+```lua
+-- Tier 4: Character search
+M.gen_find_char(skill)           -- f
+M.gen_till_char(skill)           -- t
+M.gen_find_char_backward(skill)  -- F
+M.gen_till_char_backward(skill)  -- T
+M.gen_repeat_find(skill)         -- ;
+M.gen_repeat_find_reverse(skill) -- ,
+
+-- Tier 5: File navigation
+M.gen_goto_top(skill)            -- gg
+M.gen_goto_bottom(skill)         -- G
+M.gen_goto_line(skill, use_gg)   -- nG or ngg (helper, not routed)
+M.gen_match_bracket(skill)       -- %
+M.gen_paragraph_up(skill)        -- {
+M.gen_paragraph_down(skill)      -- }
+```
+
+### Routing Table Updates
+All Tier 4-5 skills now have dedicated generators instead of falling back to the generic motion fallback.
+
+---
 

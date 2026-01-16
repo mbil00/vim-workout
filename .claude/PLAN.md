@@ -294,11 +294,11 @@ Store in `~/.local/share/nvim/vim-workout/progress.json`:
 
 ### Phase 2: Core Mechanics ✅ COMPLETE
 - [x] Skill definition system
-- [x] Tier 1-3 skills (basic motions)
+- [x] Tier 1-5 skills (all motions with dedicated generators)
 - [x] Basic exercise generator (motion-only)
 - [x] Result verification (cursor position)
 
-### Phase 3: Operators & Verification
+### Phase 3: Operators & Verification ✅ COMPLETE
 - [x] Operator skills (d, c, y) - Implemented: d, c, y, dd, cc, yy, D, C
 - [x] Keystroke capture system
 - [x] Buffer state verification - Uses expected_lines comparison
@@ -309,7 +309,7 @@ Store in `~/.local/share/nvim/vim-workout/progress.json`:
 - [x] Combined exercise generation (operator + text object: diw, ci", da}, etc.)
 - [x] Educational feedback system
 
-### Phase 5: Progress & Polish
+### Phase 5: Progress & Polish ✅ COMPLETE
 - [x] Progress persistence
 - [x] Mastery-weighted exercise selection
 - [x] Skill unlock system

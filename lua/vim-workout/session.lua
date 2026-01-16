@@ -22,14 +22,32 @@ local state = {
   key_handler = nil,
   autocmd_id = nil,
   ready = false,  -- Prevent instant completion during setup
+  completing = false,  -- Prevent actions during completion delay
+  indicator_win = nil,  -- Track completion indicator window
+  feedback_win = nil,  -- Track feedback window
 }
+
+--- Close any tracked floating windows
+local function close_floating_windows()
+  if state.indicator_win and vim.api.nvim_win_is_valid(state.indicator_win) then
+    pcall(vim.api.nvim_win_close, state.indicator_win, true)
+  end
+  state.indicator_win = nil
+
+  if state.feedback_win and vim.api.nvim_win_is_valid(state.feedback_win) then
+    pcall(vim.api.nvim_win_close, state.feedback_win, true)
+  end
+  state.feedback_win = nil
+end
 
 --- Reset state for a new exercise
 local function reset_exercise_state()
+  close_floating_windows()
   state.practice_buf = nil
   state.captured_keys = {}
   state.autocmd_id = nil
   state.ready = false
+  state.completing = false
 end
 
 --- Start a new workout session
@@ -141,7 +159,56 @@ function M.begin_exercise()
     M.abort_exercise()
   end, { buffer = state.practice_buf, nowait = true })
 
+  -- Allow restarting with Ctrl-R
+  vim.keymap.set("n", "<C-r>", function()
+    M.restart_exercise()
+  end, { buffer = state.practice_buf, nowait = true })
+
   -- Mark ready after a short delay to prevent instant completion
+  vim.defer_fn(function()
+    state.ready = true
+  end, 100)
+end
+
+--- Restart the current exercise (reset buffer and captured keys)
+function M.restart_exercise()
+  local ex = state.current_exercise
+  if not ex or not state.practice_buf then
+    return
+  end
+
+  -- Don't restart if already completing
+  if state.completing then
+    return
+  end
+
+  -- Validate buffer is still valid
+  if not vim.api.nvim_buf_is_valid(state.practice_buf) then
+    return
+  end
+
+  -- Temporarily disable completion checking
+  state.ready = false
+
+  -- Reset buffer content to original
+  vim.api.nvim_buf_set_option(state.practice_buf, "modifiable", true)
+  vim.api.nvim_buf_set_lines(state.practice_buf, 0, -1, false, ex.buffer_content)
+
+  -- Reset cursor to starting position
+  if ex.cursor_start then
+    local cursor_win = vim.fn.bufwinid(state.practice_buf)
+    if cursor_win ~= -1 then
+      pcall(vim.api.nvim_win_set_cursor, cursor_win, ex.cursor_start)
+    end
+  end
+
+  -- Clear captured keystrokes
+  state.captured_keys = {}
+
+  -- Notify user
+  vim.notify("Exercise restarted", vim.log.levels.INFO)
+
+  -- Re-enable completion checking after delay
   vim.defer_fn(function()
     state.ready = true
   end, 100)
@@ -191,6 +258,11 @@ function M.check_completion()
     return
   end
 
+  -- Don't check if already completing (in delay period)
+  if state.completing then
+    return
+  end
+
   -- Validate buffer is still valid
   if not vim.api.nvim_buf_is_valid(state.practice_buf) then
     return
@@ -227,6 +299,12 @@ end
 --- Complete the current exercise and show feedback
 ---@param result table Verification result
 function M.complete_exercise(result)
+  -- Prevent re-entry during completion
+  if state.completing then
+    return
+  end
+  state.completing = true
+
   M.stop_key_capture()
 
   -- Clear autocmd
@@ -258,26 +336,45 @@ function M.complete_exercise(result)
   result.user_keys = state.captured_keys
   result.optimal_keys = ex.optimal_keys
 
-  -- Close practice buffer
-  if state.practice_buf and vim.api.nvim_buf_is_valid(state.practice_buf) then
-    pcall(vim.api.nvim_buf_delete, state.practice_buf, { force = true })
-  end
-  state.practice_buf = nil
+  -- Show completion indicator so user can see their change
+  state.indicator_win = ui.show_completion_indicator()
 
-  -- Restore original buffer in original window before showing feedback
-  if state.original_win and vim.api.nvim_win_is_valid(state.original_win) then
-    if state.original_buf and vim.api.nvim_buf_is_valid(state.original_buf) then
-      pcall(vim.api.nvim_win_set_buf, state.original_win, state.original_buf)
+  -- Wait 2 seconds before showing feedback, so user can see the result of their action
+  vim.defer_fn(function()
+    -- Session may have been ended during the delay
+    if not state.active then
+      close_floating_windows()
+      return
     end
-  end
 
-  -- Show feedback
-  ui.show_feedback(result, M.next_exercise, M.end_session)
+    -- Close the indicator
+    if state.indicator_win and vim.api.nvim_win_is_valid(state.indicator_win) then
+      pcall(vim.api.nvim_win_close, state.indicator_win, true)
+    end
+    state.indicator_win = nil
+
+    -- Close practice buffer
+    if state.practice_buf and vim.api.nvim_buf_is_valid(state.practice_buf) then
+      pcall(vim.api.nvim_buf_delete, state.practice_buf, { force = true })
+    end
+    state.practice_buf = nil
+
+    -- Restore original buffer in original window before showing feedback
+    if state.original_win and vim.api.nvim_win_is_valid(state.original_win) then
+      if state.original_buf and vim.api.nvim_buf_is_valid(state.original_buf) then
+        pcall(vim.api.nvim_win_set_buf, state.original_win, state.original_buf)
+      end
+    end
+
+    -- Show feedback and track window
+    state.feedback_win = ui.show_feedback(result, M.next_exercise, M.end_session)
+  end, 2000)  -- 2 second delay
 end
 
 --- Abort the current exercise
 function M.abort_exercise()
   M.stop_key_capture()
+  close_floating_windows()
 
   if state.autocmd_id then
     pcall(vim.api.nvim_del_autocmd, state.autocmd_id)
@@ -296,6 +393,8 @@ end
 function M.end_session()
   M.stop_key_capture()
   state.active = false
+  state.completing = false
+  close_floating_windows()
 
   if state.autocmd_id then
     pcall(vim.api.nvim_del_autocmd, state.autocmd_id)

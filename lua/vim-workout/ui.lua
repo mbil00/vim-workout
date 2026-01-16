@@ -93,6 +93,7 @@ function M.show_exercise_prompt(exercise, exercise_num, on_start, on_quit)
   end
 
   table.insert(content, "  Press ENTER to start, q to quit")
+  table.insert(content, "  During exercise: Ctrl-R to restart, Ctrl-C to abort")
   table.insert(content, "")
 
   local buf, win = M.create_float(content, { title = "vim-workout" })
@@ -114,6 +115,7 @@ end
 ---@param result table Exercise result data
 ---@param on_next function Callback for next exercise
 ---@param on_quit function Callback when user quits
+---@return number win Window handle
 function M.show_feedback(result, on_next, on_quit)
   local content = {}
 
@@ -166,6 +168,8 @@ function M.show_feedback(result, on_next, on_quit)
     vim.api.nvim_win_close(win, true)
     on_quit()
   end, { buffer = buf, nowait = true })
+
+  return win
 end
 
 --- Generate a text progress bar
@@ -245,6 +249,38 @@ function M.show_stats(prog)
   table.insert(content, "")
 
   M.create_float(content, { title = "Stats" })
+end
+
+--- Show brief completion indicator overlay
+--- Displays a small floating indicator while keeping the practice buffer visible
+---@return number win Window handle (caller should close it after delay)
+function M.show_completion_indicator()
+  local content = { "  ✓ Success!  " }
+
+  -- Small floating window at top-right of screen
+  local width = #content[1]
+  local screen_width = vim.o.columns
+
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, content)
+  vim.api.nvim_buf_set_option(buf, "modifiable", false)
+  vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+
+  local win = vim.api.nvim_open_win(buf, false, {  -- false = don't focus
+    relative = "editor",
+    width = width,
+    height = 1,
+    row = 1,
+    col = screen_width - width - 2,
+    style = "minimal",
+    border = "rounded",
+    focusable = false,
+  })
+
+  -- Green highlight for success
+  vim.api.nvim_win_set_option(win, "winhighlight", "Normal:DiagnosticOk,FloatBorder:DiagnosticOk")
+
+  return win
 end
 
 --- Show confirmation dialog

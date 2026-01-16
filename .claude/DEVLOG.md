@@ -451,6 +451,71 @@ Same issue fixed for `c$`/`C` which also had a double-space bug.
 
 ---
 
+## Session 5: Completion Delay & Retry Feature (2026-01-16)
+
+### What Was Added
+
+#### Completion Delay
+- After completing an exercise, a "✓ Success!" indicator appears in the top-right corner
+- User sees their completed change for 2 seconds before the feedback screen appears
+- Allows users to observe the result of their action (deleted text, changed content, etc.)
+
+#### Retry Functionality
+- Press `Ctrl-R` during an exercise to restart it
+- Resets buffer content to original state
+- Resets cursor to starting position
+- Clears captured keystrokes
+- Shows "Exercise restarted" notification
+- Useful when you accidentally hit wrong keys
+
+### Implementation Details
+
+#### New State Variables (session.lua)
+```lua
+state = {
+  ...
+  completing = false,  -- Prevents actions during 2-second delay
+  indicator_win = nil,  -- Tracks completion indicator window
+  feedback_win = nil,   -- Tracks feedback window
+}
+```
+
+#### Window Tracking
+- Added `close_floating_windows()` helper function
+- Tracks both indicator and feedback windows in state
+- Ensures windows are properly closed before showing new ones
+- Fixes bug where feedback window persisted into next exercise
+
+#### New Functions
+- `M.restart_exercise()` - Resets exercise to initial state
+- `close_floating_windows()` - Cleanup helper for floating windows
+
+#### UI Changes
+- `ui.show_completion_indicator()` - Small floating window showing success
+- `ui.show_feedback()` now returns window handle for tracking
+- Exercise prompt now shows: "During exercise: Ctrl-R to restart, Ctrl-C to abort"
+
+### Bug Fix: Feedback Window Persistence
+
+**Symptom**: After completing an exercise, the feedback/result window would remain visible overlapping the next exercise.
+
+**Root Cause**: Feedback window wasn't being tracked, so when `next_exercise()` was called, the old window wasn't explicitly closed.
+
+**Fix**:
+- Track `feedback_win` in session state
+- Call `close_floating_windows()` in `reset_exercise_state()`
+- Ensures all floating windows are closed before starting new exercise
+
+### Files Modified
+- `lua/vim-workout/session.lua` - Added completing state, window tracking, restart function
+- `lua/vim-workout/ui.lua` - Added completion indicator, return window handle from show_feedback
+
+### Keybindings During Exercise
+- `Ctrl-C` - Abort exercise and end session
+- `Ctrl-R` - Restart current exercise
+
+---
+
 ### Next Steps (Phase 5+)
 - [ ] Implement Tier 4-5 motion generators (f, t, gg, G, %, {, })
 - [ ] Visual mode exercises

@@ -5,6 +5,7 @@ local M = {}
 
 local motions = require("vim-workout.skills.motions")
 local operators = require("vim-workout.skills.operators")
+local text_objects = require("vim-workout.skills.text_objects")
 
 -- All skills combined
 local all_skills = {}
@@ -23,7 +24,10 @@ local function init()
     table.insert(all_skills, skill)
   end
 
-  -- Future: Add text object skills
+  -- Add text object skills
+  for _, skill in ipairs(text_objects.skills) do
+    table.insert(all_skills, skill)
+  end
 end
 
 --- Get all registered skills

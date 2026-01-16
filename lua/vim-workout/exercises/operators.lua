@@ -119,12 +119,9 @@ function M.gen_delete_to_end(skill)
     start_col = start_col + #words[i] + 1
   end
 
-  -- Expected line is just the words before cursor
-  local expected_words = {}
-  for i = 1, start_word_idx - 1 do
-    table.insert(expected_words, words[i])
-  end
-  local expected_line = table.concat(expected_words, " ")
+  -- Expected line is the substring up to cursor position
+  -- When cursor is at start of word3, d$ leaves "word1 word2 " (with trailing space)
+  local expected_line = line:sub(1, start_col)
 
   local use_D = skill.id == "operator_D"
   local key_display = use_D and "D" or "d$"
@@ -242,12 +239,9 @@ function M.gen_change_to_end(skill)
   -- New text to replace rest of line
   local new_text = table.concat(data.get_random_words(2), " ")
 
-  -- Expected line
-  local expected_words = {}
-  for i = 1, start_word_idx - 1 do
-    table.insert(expected_words, words[i])
-  end
-  local expected_line = table.concat(expected_words, " ") .. " " .. new_text
+  -- Expected line: text before cursor + new text
+  -- c$ deletes from cursor to end, then we type new_text
+  local expected_line = line:sub(1, start_col) .. new_text
 
   local use_C = skill.id == "operator_C"
   local key_display = use_C and "C" or "c$"

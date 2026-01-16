@@ -3,7 +3,7 @@
 ## Project Overview
 A Neovim plugin to learn vim through interactive, progressively unlocking exercises with educational feedback. Skills are randomly mixed into exercises once unlocked, creating natural spaced repetition.
 
-## Current Status: Phase 3 In Progress (Operators Added)
+## Current Status: Phase 4 Complete (Text Objects Added)
 
 ### What's Implemented
 - Plugin structure with Lua modules
@@ -20,6 +20,8 @@ A Neovim plugin to learn vim through interactive, progressively unlocking exerci
 - **Tier 2**: w, b, e, W, B, E (word motions)
 - **Tier 3**: 0, ^, $ (line motions)
 - **Tier 4-5**: Defined but using fallback generator (f, t, F, T, gg, G, %, {, })
+- **Tier 6**: d, c, y, dd, cc, yy, D, C (operators)
+- **Tier 7**: iw, aw, i", a", i', a', i), a), i], a], i}, a}, i>, a>, ip, ap, it, at (text objects)
 
 ---
 
@@ -321,4 +323,137 @@ When adding new exercises (e.g., for text objects):
 - Created: `lua/vim-workout/exercises/text_objects.lua`
 - Modified: `lua/vim-workout/session.lua` (updated import)
 - Deleted: `lua/vim-workout/exercise.lua`
+
+---
+
+## Session 4: Phase 4 - Text Objects Implementation (2026-01-16)
+
+### What Was Added
+
+#### New Files
+- `lua/vim-workout/skills/text_objects.lua` - Text object skill definitions (Tier 7)
+
+#### Text Object Skills Implemented (18 total)
+
+**Word text objects:**
+- `textobj_iw` - Inner word (diw, ciw)
+- `textobj_aw` - Around word (daw)
+
+**Quote text objects:**
+- `textobj_i_dquote` - Inner double quote (di", ci")
+- `textobj_a_dquote` - Around double quote (da")
+- `textobj_i_squote` - Inner single quote (di', ci')
+- `textobj_a_squote` - Around single quote (da')
+
+**Bracket text objects:**
+- `textobj_i_paren` - Inner parentheses (di), ci))
+- `textobj_a_paren` - Around parentheses (da))
+- `textobj_i_bracket` - Inner square brackets (di], ci])
+- `textobj_a_bracket` - Around square brackets (da])
+- `textobj_i_brace` - Inner curly braces (di}, ci})
+- `textobj_a_brace` - Around curly braces (da})
+- `textobj_i_angle` - Inner angle brackets (di>, ci>)
+- `textobj_a_angle` - Around angle brackets (da>)
+
+**Paragraph text objects:**
+- `textobj_ip` - Inner paragraph (dip)
+- `textobj_ap` - Around paragraph (dap)
+
+**Tag text objects:**
+- `textobj_it` - Inner tag (dit, cit)
+- `textobj_at` - Around tag (dat)
+
+#### Exercise Generators Added
+
+All text objects have custom exercise generators in `exercises/text_objects.lua`:
+
+1. **Word exercises** - Delete/change word while cursor is in middle of word
+2. **Quote exercises** - Delete/change content inside or including quotes
+3. **Bracket exercises** - Delete/change function args, array elements, object properties
+4. **Paragraph exercises** - Delete paragraph blocks with/without trailing blank lines
+5. **Tag exercises** - Delete/change HTML/XML tag content
+
+### Implementation Notes
+
+#### Text Objects Always Use Operators
+- Unlike motions which can be practiced solo, text objects require an operator
+- Exercise generator randomly picks `d` (delete) or `c` (change)
+- This teaches the practical usage pattern (diw, ci", da}, etc.)
+
+#### Cursor Placement
+- Exercises place cursor INSIDE the target area (middle of word, between quotes, etc.)
+- This mimics real-world usage where you're editing something you're looking at
+
+#### Inner vs Around Distinction
+- **Inner (i)**: Deletes/changes content only (quotes/brackets remain)
+- **Around (a)**: Deletes/changes content AND surrounding delimiters/spaces
+- Exercises demonstrate this difference clearly
+
+#### Unlock System
+Text objects unlock progressively after mastering operators:
+- `textobj_iw` requires: `operator_d`, `operator_c`
+- `textobj_aw` requires: `textobj_iw`
+- Quote objects unlock after word objects
+- Bracket objects unlock after word objects
+- Tag objects unlock after angle bracket objects
+
+### Files Modified
+- `lua/vim-workout/skills/init.lua` - Added text object skill registration
+- `lua/vim-workout/exercises/init.lua` - Added routing for 18 text object generators
+- `lua/vim-workout/exercises/text_objects.lua` - Full implementation (was stub)
+
+### Updated File Structure
+```
+vim-workout/
+├── plugin/vim-workout.lua
+├── lua/vim-workout/
+│   ├── init.lua
+│   ├── ui.lua
+│   ├── session.lua
+│   ├── verifier.lua
+│   ├── progress.lua
+│   ├── data.lua
+│   ├── exercises/
+│   │   ├── init.lua          -- Core + routing (now 138 lines)
+│   │   ├── motions.lua       -- Motion generators (223 lines)
+│   │   ├── operators.lua     -- Operator generators (316 lines)
+│   │   └── text_objects.lua  -- Text object generators (741 lines)
+│   └── skills/
+│       ├── init.lua          -- Skill registry
+│       ├── motions.lua       -- Motion skills (Tier 1-5)
+│       ├── operators.lua     -- Operator skills (Tier 6)
+│       └── text_objects.lua  -- Text object skills (Tier 7)
+└── .claude/
+    ├── PLAN.md
+    └── DEVLOG.md
+```
+
+### Bug Fix: d$/D and c$/C exercises never completed
+
+**Symptom**: Exercises using `d$` or `c$` never detected completion.
+
+**Root Cause**:
+- Cursor was positioned at start of a word (e.g., position after "word1 word2 ")
+- `d$` deletes from cursor to end, leaving "word1 word2 " (with trailing space)
+- But `expected_line` was built as `table.concat(words, " ")` = "word1 word2" (no trailing space)
+- Buffer content never matched expected content
+
+**Fix** (exercises/operators.lua):
+```lua
+-- Before (wrong):
+local expected_line = table.concat(expected_words, " ")
+
+-- After (correct):
+local expected_line = line:sub(1, start_col)  -- Exact substring up to cursor
+```
+
+Same issue fixed for `c$`/`C` which also had a double-space bug.
+
+---
+
+### Next Steps (Phase 5+)
+- [ ] Implement Tier 4-5 motion generators (f, t, gg, G, %, {, })
+- [ ] Visual mode exercises
+- [ ] Registers & macros
+- [ ] Session configuration options
 

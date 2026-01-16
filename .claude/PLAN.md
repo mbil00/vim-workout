@@ -304,9 +304,9 @@ Store in `~/.local/share/nvim/vim-workout/progress.json`:
 - [x] Buffer state verification - Uses expected_lines comparison
 - [x] Optimal solution comparison
 
-### Phase 4: Text Objects & Combinations
-- [ ] Text object skills
-- [ ] Combined exercise generation (operator + text object)
+### Phase 4: Text Objects & Combinations ✅ COMPLETE
+- [x] Text object skills (iw, aw, i", a", i), a), i], a], i}, a}, i>, a>, ip, ap, it, at)
+- [x] Combined exercise generation (operator + text object: diw, ci", da}, etc.)
 - [x] Educational feedback system
 
 ### Phase 5: Progress & Polish

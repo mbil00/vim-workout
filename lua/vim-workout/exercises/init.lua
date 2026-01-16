@@ -12,6 +12,7 @@ local function get_generators()
   if not generators.motions then
     generators.motions = require("vim-workout.exercises.motions")
     generators.operators = require("vim-workout.exercises.operators")
+    generators.text_objects = require("vim-workout.exercises.text_objects")
   end
   return generators
 end
@@ -106,6 +107,25 @@ function M.generate_for_skill(skill)
     operator_yy = gens.operators.gen_yank_line,
     operator_D = gens.operators.gen_delete_to_end,
     operator_C = gens.operators.gen_change_to_end,
+    -- Tier 7: Text Objects
+    textobj_iw = gens.text_objects.gen_inner_word,
+    textobj_aw = gens.text_objects.gen_around_word,
+    textobj_i_dquote = gens.text_objects.gen_inner_dquote,
+    textobj_a_dquote = gens.text_objects.gen_around_dquote,
+    textobj_i_squote = gens.text_objects.gen_inner_squote,
+    textobj_a_squote = gens.text_objects.gen_around_squote,
+    textobj_i_paren = gens.text_objects.gen_inner_paren,
+    textobj_a_paren = gens.text_objects.gen_around_paren,
+    textobj_i_bracket = gens.text_objects.gen_inner_bracket,
+    textobj_a_bracket = gens.text_objects.gen_around_bracket,
+    textobj_i_brace = gens.text_objects.gen_inner_brace,
+    textobj_a_brace = gens.text_objects.gen_around_brace,
+    textobj_i_angle = gens.text_objects.gen_inner_angle,
+    textobj_a_angle = gens.text_objects.gen_around_angle,
+    textobj_ip = gens.text_objects.gen_inner_paragraph,
+    textobj_ap = gens.text_objects.gen_around_paragraph,
+    textobj_it = gens.text_objects.gen_inner_tag,
+    textobj_at = gens.text_objects.gen_around_tag,
   }
 
   local generator = routing[skill.id]

@@ -81,6 +81,94 @@ M.skills = {
     description = "Change from cursor to end of line (same as c$)",
     prerequisites = { "operator_c", "motion_dollar" },
   },
+
+  -- Tier 8: Advanced Operators
+  -- Indent operators
+  {
+    id = "operator_gt",
+    name = "Indent",
+    key = ">",
+    type = "operator",
+    tier = 8,
+    description = "Indent text with a motion (>{motion})",
+    prerequisites = { "operator_d" },
+  },
+  {
+    id = "operator_gtgt",
+    name = "Indent Line",
+    key = ">>",
+    type = "operator",
+    tier = 8,
+    description = "Indent the current line",
+    prerequisites = { "operator_gt" },
+  },
+  {
+    id = "operator_lt",
+    name = "Outdent",
+    key = "<",
+    type = "operator",
+    tier = 8,
+    description = "Outdent (unindent) text with a motion (<{motion})",
+    prerequisites = { "operator_gt" },
+  },
+  {
+    id = "operator_ltlt",
+    name = "Outdent Line",
+    key = "<<",
+    type = "operator",
+    tier = 8,
+    description = "Outdent (unindent) the current line",
+    prerequisites = { "operator_lt" },
+  },
+
+  -- Case operators
+  {
+    id = "operator_gu",
+    name = "Lowercase",
+    key = "gu",
+    type = "operator",
+    tier = 8,
+    description = "Make text lowercase with a motion (gu{motion})",
+    prerequisites = { "operator_c" },
+  },
+  {
+    id = "operator_gU",
+    name = "Uppercase",
+    key = "gU",
+    type = "operator",
+    tier = 8,
+    description = "Make text uppercase with a motion (gU{motion})",
+    prerequisites = { "operator_gu" },
+  },
+  {
+    id = "operator_gtilde",
+    name = "Toggle Case",
+    key = "g~",
+    type = "operator",
+    tier = 8,
+    description = "Toggle case of text with a motion (g~{motion})",
+    prerequisites = { "operator_gU" },
+  },
+
+  -- Format operators
+  {
+    id = "operator_gq",
+    name = "Format Text",
+    key = "gq",
+    type = "operator",
+    tier = 8,
+    description = "Format/wrap text with a motion (gq{motion})",
+    prerequisites = { "operator_c" },
+  },
+  {
+    id = "operator_eq",
+    name = "Auto-indent",
+    key = "=",
+    type = "operator",
+    tier = 8,
+    description = "Auto-indent code with a motion (={motion})",
+    prerequisites = { "operator_gtgt" },
+  },
 }
 
 return M

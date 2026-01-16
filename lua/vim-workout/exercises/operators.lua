@@ -346,4 +346,363 @@ function M.gen_yank_line(skill)
   }
 end
 
+-------------------------------------------------------------------------
+-- Tier 8: Indent Generators
+-------------------------------------------------------------------------
+
+--- Generate "indent line" (>>) exercise
+---@param skill table
+---@return table
+function M.gen_indent_line(skill)
+  local lines = {
+    "function example()",
+    "local x = 1",
+    "return x",
+    "end",
+  }
+
+  -- Target line 2 or 3 (the unindented code lines)
+  local target_line = math.random(2, 3)
+
+  -- Build expected lines with indentation added
+  local expected_lines = {}
+  for i, line in ipairs(lines) do
+    if i == target_line then
+      table.insert(expected_lines, "  " .. line)  -- 2-space indent
+    else
+      table.insert(expected_lines, line)
+    end
+  end
+
+  return {
+    instruction = "Indent the current line using >>",
+    buffer_content = lines,
+    cursor_start = { target_line, 0 },
+    expected_lines = expected_lines,
+    optimal_keys = { ">", ">" },
+    skills = { skill },
+  }
+end
+
+--- Generate "indent with motion" (>j, >2j) exercise
+---@param skill table
+---@return table
+function M.gen_indent_motion(skill)
+  local lines = {
+    "function example()",
+    "local a = 1",
+    "local b = 2",
+    "local c = 3",
+    "return a + b + c",
+    "end",
+  }
+
+  -- Indent lines 2-4 (cursor on line 2, >2j indents 3 lines)
+  local count = math.random(1, 2)
+
+  -- Build expected lines
+  local expected_lines = {}
+  for i, line in ipairs(lines) do
+    if i >= 2 and i <= 2 + count then
+      table.insert(expected_lines, "  " .. line)
+    else
+      table.insert(expected_lines, line)
+    end
+  end
+
+  local motion_desc = count == 1 and ">j" or ">" .. count .. "j"
+  local optimal = count == 1 and { ">", "j" } or { ">", tostring(count), "j" }
+
+  return {
+    instruction = "Indent " .. (count + 1) .. " lines using " .. motion_desc,
+    buffer_content = lines,
+    cursor_start = { 2, 0 },
+    expected_lines = expected_lines,
+    optimal_keys = optimal,
+    skills = { skill },
+  }
+end
+
+--- Generate "outdent line" (<<) exercise
+---@param skill table
+---@return table
+function M.gen_outdent_line(skill)
+  local lines = {
+    "function example()",
+    "    local x = 1",  -- 4 spaces (will become 2)
+    "  return x",       -- 2 spaces
+    "end",
+  }
+
+  -- Target the over-indented line
+  local target_line = 2
+
+  -- Build expected lines with reduced indentation
+  local expected_lines = {
+    "function example()",
+    "  local x = 1",  -- Reduced by one shiftwidth (2 spaces)
+    "  return x",
+    "end",
+  }
+
+  return {
+    instruction = "Remove one level of indentation using <<",
+    buffer_content = lines,
+    cursor_start = { target_line, 0 },
+    expected_lines = expected_lines,
+    optimal_keys = { "<", "<" },
+    skills = { skill },
+  }
+end
+
+--- Generate "outdent with motion" (<j) exercise
+---@param skill table
+---@return table
+function M.gen_outdent_motion(skill)
+  local lines = {
+    "function example()",
+    "    local a = 1",  -- 4 spaces
+    "    local b = 2",  -- 4 spaces
+    "  return a + b",   -- 2 spaces
+    "end",
+  }
+
+  -- Build expected lines
+  local expected_lines = {
+    "function example()",
+    "  local a = 1",    -- Reduced to 2 spaces
+    "  local b = 2",    -- Reduced to 2 spaces
+    "  return a + b",
+    "end",
+  }
+
+  return {
+    instruction = "Outdent 2 lines using <j",
+    buffer_content = lines,
+    cursor_start = { 2, 0 },
+    expected_lines = expected_lines,
+    optimal_keys = { "<", "j" },
+    skills = { skill },
+  }
+end
+
+-------------------------------------------------------------------------
+-- Tier 8: Case Generators
+-------------------------------------------------------------------------
+
+--- Generate "lowercase word" (guw) exercise
+---@param skill table
+---@return table
+function M.gen_lowercase(skill)
+  -- Create a line with mixed case words
+  local words = { "Hello", "WORLD", "Test", "CODE", "Data", "VALUE" }
+  local lowercase_words = { "hello", "world", "test", "code", "data", "value" }
+
+  -- Pick a random word to target (index 2-5)
+  local target_idx = math.random(2, 5)
+  local line_words = {}
+  for i = 1, 6 do
+    table.insert(line_words, words[math.random(#words)])
+  end
+
+  -- Make target word uppercase
+  local uppercase_words = { "HELLO", "WORLD", "TEST", "CODE", "DATA", "VALUE" }
+  line_words[target_idx] = uppercase_words[math.random(#uppercase_words)]
+  local target_word = line_words[target_idx]
+
+  local line = table.concat(line_words, " ")
+
+  -- Calculate cursor position
+  local start_col = 0
+  for i = 1, target_idx - 1 do
+    start_col = start_col + #line_words[i] + 1
+  end
+
+  -- Build expected line
+  local expected_words = {}
+  for i, w in ipairs(line_words) do
+    if i == target_idx then
+      table.insert(expected_words, w:lower())
+    else
+      table.insert(expected_words, w)
+    end
+  end
+  local expected_line = table.concat(expected_words, " ")
+
+  return {
+    instruction = "Make '" .. target_word .. "' lowercase using guw",
+    buffer_content = { line },
+    cursor_start = { 1, start_col },
+    expected_lines = { expected_line },
+    optimal_keys = { "g", "u", "w" },
+    skills = { skill },
+  }
+end
+
+--- Generate "uppercase word" (gUw) exercise
+---@param skill table
+---@return table
+function M.gen_uppercase(skill)
+  -- Create a line with mixed case words
+  local words = { "hello", "world", "test", "code", "data", "value" }
+
+  local line_words = {}
+  for i = 1, 6 do
+    table.insert(line_words, words[math.random(#words)])
+  end
+
+  -- Target word (index 2-5)
+  local target_idx = math.random(2, 5)
+  local target_word = line_words[target_idx]
+
+  local line = table.concat(line_words, " ")
+
+  -- Calculate cursor position
+  local start_col = 0
+  for i = 1, target_idx - 1 do
+    start_col = start_col + #line_words[i] + 1
+  end
+
+  -- Build expected line
+  local expected_words = {}
+  for i, w in ipairs(line_words) do
+    if i == target_idx then
+      table.insert(expected_words, w:upper())
+    else
+      table.insert(expected_words, w)
+    end
+  end
+  local expected_line = table.concat(expected_words, " ")
+
+  return {
+    instruction = "Make '" .. target_word .. "' uppercase using gUw",
+    buffer_content = { line },
+    cursor_start = { 1, start_col },
+    expected_lines = { expected_line },
+    optimal_keys = { "g", "U", "w" },
+    skills = { skill },
+  }
+end
+
+--- Generate "toggle case" (g~w) exercise
+---@param skill table
+---@return table
+function M.gen_toggle_case(skill)
+  -- Create mixed case words
+  local mixed_words = { "HeLLo", "WoRLd", "TeST", "CoDe", "DaTa", "VaLuE" }
+
+  local line_words = {}
+  for i = 1, 6 do
+    table.insert(line_words, mixed_words[math.random(#mixed_words)])
+  end
+
+  -- Target word (index 2-5)
+  local target_idx = math.random(2, 5)
+  local target_word = line_words[target_idx]
+
+  local line = table.concat(line_words, " ")
+
+  -- Calculate cursor position
+  local start_col = 0
+  for i = 1, target_idx - 1 do
+    start_col = start_col + #line_words[i] + 1
+  end
+
+  -- Toggle case helper
+  local function toggle_case(s)
+    local result = ""
+    for i = 1, #s do
+      local c = s:sub(i, i)
+      if c:match("%u") then
+        result = result .. c:lower()
+      else
+        result = result .. c:upper()
+      end
+    end
+    return result
+  end
+
+  -- Build expected line
+  local expected_words = {}
+  for i, w in ipairs(line_words) do
+    if i == target_idx then
+      table.insert(expected_words, toggle_case(w))
+    else
+      table.insert(expected_words, w)
+    end
+  end
+  local expected_line = table.concat(expected_words, " ")
+
+  return {
+    instruction = "Toggle the case of '" .. target_word .. "' using g~w",
+    buffer_content = { line },
+    cursor_start = { 1, start_col },
+    expected_lines = { expected_line },
+    optimal_keys = { "g", "~", "w" },
+    skills = { skill },
+  }
+end
+
+-------------------------------------------------------------------------
+-- Tier 8: Format Generators
+-------------------------------------------------------------------------
+
+--- Generate "format line" (gqq) exercise
+--- Uses a short line that wraps predictably at textwidth
+---@param skill table
+---@return table
+function M.gen_format_line(skill)
+  -- Create a long line that should wrap
+  -- Note: This exercise works best when textwidth is set
+  -- For predictable testing, we use a line with natural break points
+  local long_line = "This is a very long line of text that should be formatted and wrapped to fit within the standard text width of the editor."
+
+  -- After gqq, the line should wrap (depends on textwidth setting)
+  -- For exercise purposes, we verify any reformatting occurred
+  -- Expected: line split at textwidth boundary (typically 80 chars)
+  local expected_lines = {
+    "This is a very long line of text that should be formatted and wrapped to fit",
+    "within the standard text width of the editor.",
+  }
+
+  return {
+    instruction = "Format the long line using gqq (wraps at textwidth)",
+    buffer_content = { long_line },
+    cursor_start = { 1, 0 },
+    expected_lines = expected_lines,
+    optimal_keys = { "g", "q", "q" },
+    skills = { skill },
+  }
+end
+
+--- Generate "auto-indent" (==) exercise
+---@param skill table
+---@return table
+function M.gen_auto_indent(skill)
+  -- Code with incorrect indentation
+  local lines = {
+    "function example()",
+    "local x = 1",  -- Should be indented
+    "  return x",
+    "end",
+  }
+
+  -- Line 2 needs proper indentation
+  local expected_lines = {
+    "function example()",
+    "  local x = 1",  -- Properly indented
+    "  return x",
+    "end",
+  }
+
+  return {
+    instruction = "Auto-indent the current line using ==",
+    buffer_content = lines,
+    cursor_start = { 2, 0 },
+    expected_lines = expected_lines,
+    optimal_keys = { "=", "=" },
+    skills = { skill },
+  }
+end
+
 return M

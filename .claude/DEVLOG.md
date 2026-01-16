@@ -1,11 +1,12 @@
 # vim-workout Development Log
 
-## Current Status: Phase 5 Complete (All Core Features)
+## Current Status: Phase 6 In Progress (Advanced Operators)
 
 All planned skill tiers implemented:
 - **Tier 1-5**: Motion skills (h/j/k/l, w/b/e, 0/^/$, f/t/F/T/;/,, gg/G/%/{/})
 - **Tier 6**: Operators (d/c/y, dd/cc/yy, D/C)
 - **Tier 7**: Text objects (18 total: iw/aw, quotes, brackets, paragraph, tags)
+- **Tier 8**: Advanced operators (9 total: >/>>, </<<, gu/gU/g~, gq, =)
 - **Settings**: Configurable unlock threshold, completion delay, tips, keystroke equivalence
 
 For feature details, see `FEATURES.md`. For bug history, see `BUGS.md`.
@@ -72,3 +73,15 @@ vim-workout/
 ## New Session Notes
 
 <!-- Add notes for new development sessions below -->
+
+### 2026-01-16: Tier 8 Advanced Operators
+
+Added 9 new operator skills:
+- **Indent**: `>` (motion), `>>` (line), `<` (motion), `<<` (line)
+- **Case**: `gu` (lowercase), `gU` (uppercase), `g~` (toggle)
+- **Format**: `gq` (wrap text), `=` (auto-indent)
+
+Files modified:
+- `skills/operators.lua`: +9 skill definitions (~90 lines)
+- `exercises/operators.lua`: +9 generators (~360 lines)
+- `exercises/init.lua`: +9 routing entries

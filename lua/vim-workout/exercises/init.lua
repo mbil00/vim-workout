@@ -139,6 +139,16 @@ function M.generate_for_skill(skill)
     textobj_ap = gens.text_objects.gen_around_paragraph,
     textobj_it = gens.text_objects.gen_inner_tag,
     textobj_at = gens.text_objects.gen_around_tag,
+    -- Tier 8: Advanced Operators
+    operator_gt = gens.operators.gen_indent_motion,
+    operator_gtgt = gens.operators.gen_indent_line,
+    operator_lt = gens.operators.gen_outdent_motion,
+    operator_ltlt = gens.operators.gen_outdent_line,
+    operator_gu = gens.operators.gen_lowercase,
+    operator_gU = gens.operators.gen_uppercase,
+    operator_gtilde = gens.operators.gen_toggle_case,
+    operator_gq = gens.operators.gen_format_line,
+    operator_eq = gens.operators.gen_auto_indent,
   }
 
   local generator = routing[skill.id]

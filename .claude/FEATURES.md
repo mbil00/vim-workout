@@ -71,7 +71,7 @@ High-level summary of implemented features. For detailed session history, see `a
 - Yank simplified to `yy+p` for predictable verification
 - Operators unlock after Tier 3 line motions mastered
 
-**Implementation**: `exercises/operators.lua` (~320 lines)
+**Implementation**: `exercises/operators.lua` (Tier 6 portion: ~320 lines)
 
 ---
 
@@ -90,6 +90,35 @@ High-level summary of implemented features. For detailed session history, see `a
 - Inner vs around distinction clearly demonstrated
 
 **Implementation**: `exercises/text_objects.lua` (~740 lines)
+
+---
+
+## Advanced Operator Skills (Tier 8)
+
+**9 advanced operators implemented**:
+
+**Indent Operators**:
+- `>` - Indent with motion (>j, >2j)
+- `>>` - Indent current line
+- `<` - Outdent with motion (<j)
+- `<<` - Outdent current line
+
+**Case Operators**:
+- `gu` - Lowercase with motion (guw)
+- `gU` - Uppercase with motion (gUw)
+- `g~` - Toggle case with motion (g~w)
+
+**Format Operators**:
+- `gq` - Format/wrap text (gqq)
+- `=` - Auto-indent code (==)
+
+**Key Design Decisions**:
+- Uses 2-space indentation for predictable verification
+- Case exercises use word motion (guw) for simplicity
+- Format exercises use controlled text for predictable wrapping
+- Prerequisites chain from Tier 6 operators (d, c)
+
+**Implementation**: `exercises/operators.lua` (~360 lines added)
 
 ---
 
